@@ -1,0 +1,31 @@
+x-api: &api
+  build: .
+  environment:
+    DATABASE_URL: postgresql://abacus:localdemo@db:5432/abacus
+    DB_POOL_SIZE: "5"
+  depends_on:
+    db:
+      condition: service_healthy
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: abacus
+      POSTGRES_PASSWORD: localdemo
+      POSTGRES_DB: abacus
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abacus -d abacus"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  api1:
+    <<: *api
+    ports: ["8001:8000"]
+  api2:
+    <<: *api
+    ports: ["8002:8000"]
+volumes:
+  db-data:
